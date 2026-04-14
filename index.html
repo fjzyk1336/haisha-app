@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="配車管理">
+<link rel="apple-touch-icon" href="icon-haisha-192.png">
+<link rel="manifest" href="manifest.json">
+<title>配車管理</title>
+<style>
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #0d47a1;
+  --success: #34a853;
+  --warning: #f9ab00;
+  --danger: #ea4335;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #1a1a1a;
+  --text-sub: #666;
+  --border: #e0e0e0;
+  --radius: 14px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  font-size: 18px;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+  min-height: 100vh;
+}
+
+/* ── ヘッダー ── */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  padding: 50px 16px 14px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 26px; font-weight: 700; }
+.header .date { font-size: 16px; opacity: 0.85; margin-top: 3px; }
+
+/* ── 日付ナビ ── */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.date-nav-btn {
+  min-width: 52px; min-height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.2);
+  border: none; border-radius: 10px;
+  color: #fff; font-size: 22px;
+  cursor: pointer;
+  transition: background .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.date-nav-btn:active { background: rgba(255,255,255,0.35); }
+.date-nav .date-text {
+  flex: 1;
+  text-align: center;
+  font-size: 20px; font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.date-nav .date-text input[type="date"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%; height: 100%;
+  cursor: pointer;
+  font-size: 16px;
+}
+.date-nav .today-btn {
+  min-width: 60px; min-height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.25);
+  border: none; border-radius: 10px;
+  color: #fff; font-size: 16px; font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.date-nav .today-btn:active { background: rgba(255,255,255,0.4); }
+
+/* ── タブナビ ── */
+.tab-nav {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 150px; z-index: 99;
+}
+.tab-nav button {
+  flex: 1;
+  padding: 16px 6px;
+  background: none; border: none;
+  font-size: 16px; font-weight: 600;
+  color: var(--text-sub);
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+}
+.tab-nav button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* ── ページ ── */
+.page { display: none; padding: 14px 14px 80px; }
+.page.active { display: block; }
+
+/* ── ドライバーカード ── */
+.driver-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-left: 5px solid var(--primary);
+}
+.driver-card.all-confirmed { border-left-color: var(--success); }
+.driver-card.has-pending { border-left-color: var(--warning); }
+
+.driver-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #f8f9ff, #eef1fb);
+}
+.driver-card.all-confirmed .driver-card-header {
+  background: linear-gradient(135deg, #f0faf2, #e4f5e8);
+}
+.driver-card-header .driver-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+}
+.driver-card-header .job-count {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(26,115,232,0.12);
+  color: var(--primary);
+}
+
+.driver-card-jobs {
+  padding: 0 16px;
+}
+
+.driver-job-row {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background .15s;
+}
+.driver-job-row:last-child {
+  border-bottom: none;
+}
+.driver-job-row:active {
+  background: #f8f8f8;
+}
+
+.driver-job-line1 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.driver-job-client {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--text);
+}
+.driver-job-weight {
+  font-size: 17px;
+  font-weight: 600;
+  color: #e65100;
+}
+.driver-job-route {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 17px;
+  color: var(--text);
+}
+.driver-job-route .arrow {
+  color: var(--primary);
+  font-weight: 700;
+}
+.driver-job-route .route-time {
+  margin-left: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e67700;
+  white-space: nowrap;
+}
+.driver-job-item {
+  font-size: 15px;
+  color: #2e7d32;
+  margin-top: 3px;
+}
+
+/* legacy tag styles kept for parse tab */
+.job-card .tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 15px; font-weight: 600;
+  background: #e8f0fe; color: var(--primary);
+}
+.job-card .tag.weight { background: #fef3e0; color: #e65100; }
+.job-card .tag.item { background: #e8f5e9; color: #2e7d32; }
+.job-card .tag.time { background: #fce4ec; color: #c62828; }
+.job-card .tag.truck { background: #f3e5f5; color: #7b1fa2; }
+
+/* ── 統計バー ── */
+.stats-bar {
+  display: flex; gap: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.stat-box {
+  flex: 0 0 auto;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 110px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.stat-box .num { font-size: 34px; font-weight: 800; }
+.stat-box .label { font-size: 14px; color: var(--text-sub); margin-top: 3px; }
+.stat-box.blue .num { color: var(--primary); }
+.stat-box.green .num { color: var(--success); }
+.stat-box.orange .num { color: #e65100; }
+.stat-box.red .num { color: var(--danger); }
+
+/* ── テキスト解析 ── */
+.parse-area {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.parse-area h3 { font-size: 18px; margin-bottom: 12px; }
+.parse-area textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 17px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color .2s;
+}
+.parse-area textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.parse-area .hint {
+  font-size: 14px; color: var(--text-sub);
+  margin-top: 6px;
+}
+
+.parse-result {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 12px;
+  display: none;
+}
+.parse-result.show { display: block; }
+.parse-result h3 { font-size: 18px; margin-bottom: 12px; color: var(--success); }
+.field-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.field-row label {
+  min-width: 65px;
+  font-size: 16px; font-weight: 600;
+  color: var(--text-sub);
+}
+.field-row input, .field-row select {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 17px;
+  font-family: inherit;
+}
+.field-row input:focus, .field-row select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ── 号車一覧 ── */
+.truck-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.truck-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  text-align: center;
+}
+.truck-card .truck-num {
+  font-size: 26px; font-weight: 800;
+  color: var(--text);
+}
+.truck-card .truck-type {
+  font-size: 15px; color: var(--text-sub);
+  margin-top: 2px;
+}
+.truck-card .truck-status {
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 15px; font-weight: 600;
+  display: inline-block;
+}
+.truck-card .truck-status.free { background: #e8f5e9; color: var(--success); }
+.truck-card .truck-status.busy { background: #e8f0fe; color: var(--primary); }
+.truck-card .truck-status.maintenance { background: #fff3e0; color: #e65100; }
+.truck-card .truck-driver {
+  font-size: 16px; color: var(--text);
+  margin-top: 6px;
+}
+.truck-card .truck-dest {
+  font-size: 14px; color: var(--text-sub);
+  margin-top: 2px;
+}
+
+/* ── ボタン ── */
+.btn {
+  display: block; width: 100%;
+  padding: 16px;
+  border: none; border-radius: 12px;
+  font-size: 18px; font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-outline {
+  background: none; color: var(--primary);
+  border: 2px solid var(--primary);
+}
+.btn-danger { background: var(--danger); color: #fff; }
+.btn + .btn { margin-top: 8px; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.btn-row .btn { flex: 1; }
+
+/* ── 設定 ── */
+.setting-group {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.setting-group h3 {
+  font-size: 18px; margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row {
+  margin-bottom: 10px;
+}
+.setting-row label {
+  display: block;
+  font-size: 16px; font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+}
+.setting-row input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 17px;
+  font-family: inherit;
+}
+
+/* ── 空状態 ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-sub);
+}
+.empty-state .icon { font-size: 56px; margin-bottom: 14px; }
+.empty-state p { font-size: 17px; }
+
+/* ── ローディング ── */
+.loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-sub);
+}
+.loading .spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── トースト ── */
+.toast {
+  position: fixed;
+  bottom: 100px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #333; color: #fff;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px; font-weight: 600;
+  opacity: 0;
+  transition: all .3s;
+  z-index: 999;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── モーダル ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px 16px 40px;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal .handle {
+  width: 40px; height: 5px;
+  background: #ddd; border-radius: 3px;
+  margin: 0 auto 16px;
+}
+.modal h2 { font-size: 22px; margin-bottom: 18px; }
+
+/* ── セクションタイトル ── */
+.section-title {
+  font-size: 16px; font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <h1>配車管理</h1>
+  <div class="date" id="headerDate"></div>
+  <div class="date-nav">
+    <button class="date-nav-btn" onclick="changeDate(-1)" aria-label="前日">◀</button>
+    <div class="date-text" id="dateNavText">
+      <span id="dateNavLabel"></span>
+      <input type="date" id="datePickerInput" onchange="onDatePicked(this.value)">
+    </div>
+    <button class="date-nav-btn" onclick="changeDate(1)" aria-label="翌日">▶</button>
+    <button class="today-btn" onclick="goToday()">今日</button>
+  </div>
+</div>
+
+<!-- タブ -->
+<div class="tab-nav">
+  <button class="active" onclick="switchTab('today')">今日の案件</button>
+  <button onclick="switchTab('parse')">テキスト入力</button>
+  <button onclick="switchTab('trucks')">号車一覧</button>
+  <button onclick="switchTab('settings')">設定</button>
+</div>
+
+<!-- ===== 今日の案件 ===== -->
+<div class="page active" id="page-today">
+  <div class="stats-bar" id="statsBar"></div>
+  <div id="jobList"></div>
+</div>
+
+<!-- ===== テキスト入力 ===== -->
+<div class="page" id="page-parse">
+  <div class="parse-area">
+    <h3>案件テキストを貼り付け</h3>
+    <textarea id="parseInput" placeholder="LINEやメールの案件テキストをここに貼り付けてください&#10;&#10;例：&#10;4/15 トヨタ 20t&#10;富士営業所→アマダ&#10;リフト 7時着"></textarea>
+    <div class="hint">得意先・発地・着地・重量・品名を自動で抽出します</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="parseText()">解析する</button>
+      <button class="btn btn-outline" onclick="clearParse()">クリア</button>
+    </div>
+  </div>
+
+  <div class="parse-result" id="parseResult">
+    <h3>抽出結果</h3>
+    <div id="parsedFields"></div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="confirmJob()">スプレッドシートに登録</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 号車一覧 ===== -->
+<div class="page" id="page-trucks">
+  <div class="stats-bar" id="truckStats"></div>
+  <div class="truck-grid" id="truckGrid"></div>
+</div>
+
+<!-- ===== 設定 ===== -->
+<div class="page" id="page-settings">
+  <div class="setting-group">
+    <h3>Google Sheets連携</h3>
+    <div class="setting-row">
+      <label>スプレッドシートID</label>
+      <input type="text" id="settingSheetId" placeholder="1YYUOgySQZN8aLDPx...">
+    </div>
+    <div class="setting-row">
+      <label>GASウェブアプリURL</label>
+      <input type="url" id="settingGasUrl" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="setting-row">
+      <label>シート名（月タブ）</label>
+      <input type="text" id="settingSheetName" placeholder="4月">
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:12px">保存</button>
+    <button class="btn btn-outline" onclick="testConnection()" style="margin-top:8px">接続テスト</button>
+  </div>
+
+  <div class="setting-group">
+    <h3>号車マスタ</h3>
+    <div id="truckMasterList"></div>
+    <button class="btn btn-outline" onclick="openTruckModal()" style="margin-top:8px">+ 号車を追加</button>
+  </div>
+
+  <div class="setting-group">
+    <h3>得意先マスタ</h3>
+    <div id="clientMasterList"></div>
+    <button class="btn btn-outline" onclick="openClientModal()" style="margin-top:8px">+ 得意先を追加</button>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- 号車追加モーダル -->
+<div class="modal-overlay" id="truckModal">
+  <div class="modal">
+    <div class="handle"></div>
+    <h2>号車を追加</h2>
+    <div class="field-row">
+      <label>号車</label>
+      <input type="text" id="truckNumInput" placeholder="例: 1号車">
+    </div>
+    <div class="field-row">
+      <label>種類</label>
+      <input type="text" id="truckTypeInput" placeholder="例: 20t低床">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeTruckModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="addTruck()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 得意先追加モーダル -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="handle"></div>
+    <h2>得意先を追加</h2>
+    <div class="field-row">
+      <label>名称</label>
+      <input type="text" id="clientNameInput" placeholder="例: トヨタ">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeClientModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="addClient()">追加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 初期データ ──
+const DEFAULT_TRUCKS = [
+  { num: '1号車', type: '20t低床' },
+  { num: '2号車', type: '15tユニック' },
+  { num: '3号車', type: '15t低床' },
+  { num: '4号車', type: '4tユニック' },
+  { num: '5号車', type: '10t低床' },
+  { num: '6号車', type: '20t低床' },
+  { num: '7号車', type: '15t低床' },
+  { num: '8号車', type: '4t平' },
+];
+
+const DEFAULT_CLIENTS = [
+  'トヨタ','富士宇部','オートテック','住友ナコ','西家鉄工',
+  '新日本建販','鈴与','清水建設','大成建設'
+];
+
+// ── State ──
+let saved = loadLocal('haisha_settings') || {};
+let settings = {
+  sheetId: saved.sheetId || '1YYUOgySQZN8aLDPxehWk_-BI9fUP350GlcqFnipTh_I',
+  gasUrl: saved.gasUrl || 'https://script.google.com/macros/s/AKfycbwOho73_AbtaCyRauCye5bJxg8e0lKFM9s_J9c9ftCvWmJPDxLbrwgPWCCywRvs81WG/exec',
+  sheetName: saved.sheetName || getMonthTab()
+};
+let trucks = loadLocal('haisha_trucks') || DEFAULT_TRUCKS;
+let clients = loadLocal('haisha_clients') || DEFAULT_CLIENTS;
+let todayJobs = loadLocal('haisha_today') || [];
+let parsedJob = null;
+let currentDate = new Date();
+
+// ── 初期化 ──
+function init() {
+  updateDateDisplay();
+
+  // 設定フィールドに値をセット
+  document.getElementById('settingSheetId').value = settings.sheetId || '';
+  document.getElementById('settingGasUrl').value = settings.gasUrl || '';
+  document.getElementById('settingSheetName').value = settings.sheetName || '';
+
+  renderToday();
+  renderTrucks();
+  renderMasters();
+
+  // スプレッドシートからデータ取得
+  if (settings.sheetId) {
+    fetchTodayJobs();
+  }
+}
+
+// ── 日付表示の更新 ──
+function updateDateDisplay() {
+  const d = currentDate;
+  const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+  const dateText = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${dow}）`;
+  document.getElementById('headerDate').textContent = dateText;
+  document.getElementById('dateNavLabel').textContent = dateText;
+
+  // hidden date input の値を同期
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  document.getElementById('datePickerInput').value = `${yyyy}-${mm}-${dd}`;
+}
+
+// ── 日付変更（矢印ボタン） ──
+function changeDate(delta) {
+  currentDate.setDate(currentDate.getDate() + delta);
+  onDateChanged();
+}
+
+// ── 日付ピッカーで選択 ──
+function onDatePicked(val) {
+  if (!val) return;
+  const parts = val.split('-');
+  currentDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  onDateChanged();
+}
+
+// ── 今日に戻る ──
+function goToday() {
+  currentDate = new Date();
+  onDateChanged();
+}
+
+// ── 日付変更時の共通処理 ──
+function onDateChanged() {
+  updateDateDisplay();
+  todayJobs = [];
+  renderToday();
+  renderTrucks();
+  if (settings.sheetId) {
+    fetchTodayJobs();
+  }
+}
+
+// ── ユーティリティ ──
+function loadLocal(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+}
+function saveLocal(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function getMonthTab() {
+  return (new Date().getMonth() + 1) + '月';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── タブ切り替え ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-nav button').forEach((b, i) => {
+    b.classList.toggle('active', b.textContent.includes(
+      name === 'today' ? '今日' : name === 'parse' ? 'テキスト' :
+      name === 'trucks' ? '号車' : '設定'
+    ));
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ── 今日の案件表示 ──
+function renderToday() {
+  const stats = document.getElementById('statsBar');
+  const total = todayJobs.length;
+  const confirmed = todayJobs.filter(j => j.confirmed).length;
+  const pending = total - confirmed;
+  const truckCount = [...new Set(todayJobs.map(j => j.truck).filter(Boolean))].length;
+
+  stats.innerHTML = `
+    <div class="stat-box blue"><div class="num">${total}</div><div class="label">総案件</div></div>
+    <div class="stat-box green"><div class="num">${confirmed}</div><div class="label">確定</div></div>
+    <div class="stat-box orange"><div class="num">${pending}</div><div class="label">未確定</div></div>
+    <div class="stat-box blue"><div class="num">${truckCount}</div><div class="label">稼働車両</div></div>
+  `;
+
+  const list = document.getElementById('jobList');
+  if (total === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>今日の案件はまだありません</p>
+        <p style="margin-top:8px;font-size:12px">スプレッドシートから読み込むか<br>テキスト入力で追加してください</p>
+        <button class="btn btn-primary" onclick="fetchTodayJobs()" style="margin-top:16px;width:auto;display:inline-block;padding:10px 24px">
+          スプレッドシートから読み込み
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Group jobs by driver
+  const driverGroups = {};
+  todayJobs.forEach((job, idx) => {
+    const driverKey = (job.driver || '').trim() || '未割当';
+    if (!driverGroups[driverKey]) driverGroups[driverKey] = [];
+    driverGroups[driverKey].push({ job, idx });
+  });
+
+  // Sort: named drivers first (alphabetical), then 未割当 last
+  const driverNames = Object.keys(driverGroups).sort((a, b) => {
+    if (a === '未割当') return 1;
+    if (b === '未割当') return -1;
+    return a.localeCompare(b, 'ja');
+  });
+
+  list.innerHTML = driverNames.map(driverName => {
+    const entries = driverGroups[driverName];
+    const allConfirmed = entries.every(e => e.job.confirmed);
+    const hasPending = entries.some(e => !e.job.confirmed);
+    const statusClass = allConfirmed ? 'all-confirmed' : (hasPending ? 'has-pending' : '');
+
+    const jobsHtml = entries.map(({ job, idx }) => `
+      <div class="driver-job-row" onclick="editJob(${idx})">
+        <div class="driver-job-line1">
+          <span class="driver-job-client">${esc(job.client || '未設定')}</span>
+          ${job.weight ? `<span class="driver-job-weight">${esc(job.weight)}</span>` : ''}
+        </div>
+        <div class="driver-job-route">
+          <span>${esc(job.from || '?')}</span>
+          <span class="arrow">${job.roundTrip ? '↔' : '→'}</span>
+          <span>${esc(job.to || '?')}</span>
+          ${job.time ? `<span class="route-time">${esc(job.time)}</span>` : ''}
+        </div>
+        ${job.item ? `<div class="driver-job-item">${esc(job.item)}</div>` : ''}
+      </div>
+    `).join('');
+
+    return `
+      <div class="driver-card ${statusClass}">
+        <div class="driver-card-header">
+          <span class="driver-name">${esc(driverName)}</span>
+          <span class="job-count">${entries.length}件</span>
+        </div>
+        <div class="driver-card-jobs">
+          ${jobsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Google Sheets読み取り（GAS API経由） ──
+async function fetchTodayJobs() {
+  if (!settings.gasUrl) {
+    showToast('GAS URLを設定してください');
+    return;
+  }
+
+  const list = document.getElementById('jobList');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div>読み込み中...</div>';
+
+  try {
+    const d = currentDate;
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    const url = `${settings.gasUrl}?date=${encodeURIComponent(dateStr)}`;
+    const resp = await fetch(url);
+
+    if (!resp.ok) throw new Error('GAS APIに接続できません');
+
+    const text = await resp.text();
+    let result;
+    try { result = JSON.parse(text); } catch(e) {
+      throw new Error('GASからの応答がJSONではありません。デプロイ設定を確認してください。');
+    }
+    if (!result.success) throw new Error(result.error || 'データ取得失敗');
+
+    let jobs = [];
+    let currentDriver = '';
+    let currentTruck = '';
+
+    for (const item of (result.jobs || [])) {
+      const client = (item['得意先'] || '').trim();
+      if (!client) continue;
+      if (client === '得意先') continue;
+      if (client.match(/点検|診察/)) continue;
+
+      const driver = (item['運転手'] || '').trim();
+      const truck = (item['車番'] || '').trim();
+      if (driver) currentDriver = driver;
+      if (truck) currentTruck = truck;
+
+      jobs.push({
+        client: client,
+        weight: (item['重量'] || '').trim(),
+        from: (item['発地'] || '').trim(),
+        to: (item['着地'] || '').trim(),
+        item: (item['品名'] || '').trim(),
+        note: (item['備考'] || '').trim(),
+        time: (item['その他'] || '').trim(),
+        truck: currentTruck || '',
+        driver: currentDriver || '',
+        confirmed: true,
+        roundTrip: false
+      });
+    }
+
+    // 往復検出
+    for (let i = 0; i < jobs.length - 1; i++) {
+      if (jobs[i].client === jobs[i+1].client &&
+          jobs[i].to === jobs[i+1].from &&
+          jobs[i].from === jobs[i+1].to) {
+        jobs[i].roundTrip = true;
+        jobs.splice(i+1, 1);
+      }
+    }
+
+    todayJobs = jobs;
+    saveLocal('haisha_today', todayJobs);
+    renderToday();
+    renderTrucks();
+    showToast(`${jobs.length}件の案件を読み込みました`);
+
+  } catch (err) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <p>${esc(err.message)}</p>
+        <p style="margin-top:8px;font-size:12px">スプレッドシートの共有設定を<br>「リンクを知っている全員」にしてください</p>
+      </div>`;
+  }
+}
+
+// CSV パーサー
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuote = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuote) {
+      if (ch === '"' && text[i+1] === '"') {
+        cell += '"'; i++;
+      } else if (ch === '"') {
+        inQuote = false;
+      } else {
+        cell += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuote = true;
+      } else if (ch === ',') {
+        row.push(cell); cell = '';
+      } else if (ch === '\n' || (ch === '\r' && text[i+1] === '\n')) {
+        row.push(cell); cell = '';
+        rows.push(row); row = [];
+        if (ch === '\r') i++;
+      } else {
+        cell += ch;
+      }
+    }
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+// ── テキスト解析 ──
+function parseText() {
+  const text = document.getElementById('parseInput').value.trim();
+  if (!text) { showToast('テキストを入力してください'); return; }
+
+  parsedJob = {
+    client: '', weight: '', from: '', to: '', item: '',
+    note: '', time: '', truck: '', driver: '', confirmed: false
+  };
+
+  const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const fullText = text;
+
+  // 得意先を検出
+  for (const c of clients) {
+    if (fullText.includes(c)) {
+      parsedJob.client = c;
+      break;
+    }
+  }
+
+  // ルート検出（→, ↔, から, まで）
+  for (const line of lines) {
+    let m;
+    if ((m = line.match(/(.+?)\s*[→➡>]\s*(.+?)(?:\s|$)/))) {
+      if (!parsedJob.from) parsedJob.from = m[1].trim();
+      if (!parsedJob.to) parsedJob.to = m[2].trim();
+    }
+    if ((m = line.match(/(.+?)\s*↔\s*(.+?)(?:\s|$)/))) {
+      if (!parsedJob.from) parsedJob.from = m[1].trim();
+      if (!parsedJob.to) parsedJob.to = m[2].trim();
+      parsedJob.roundTrip = true;
+    }
+  }
+
+  // 重量検出
+  const wm = fullText.match(/(\d+(?:\.\d+)?)\s*[tT](?:on)?/);
+  if (wm) parsedJob.weight = wm[1] + 't';
+
+  // 時間検出
+  const tm = fullText.match(/(\d{1,2})[時:：](\d{0,2})\s*(着|発|まで)?/) ||
+             fullText.match(/(\d{1,2})(着|発)/) ||
+             fullText.match(/(\d{1,2}:\d{2})\s*(着|発)?/);
+  if (tm) {
+    if (tm[0].match(/\d{1,2}(着|発)/)) {
+      parsedJob.time = tm[0];
+    } else {
+      parsedJob.time = tm[0].trim();
+    }
+  }
+
+  // 品名検出（よくある品名）
+  const items = ['リフト','金型','施工機','鉄板','H鋼','パイプ','生コン','コンクリ',
+                 'ユニック','クレーン','建材','鋼材','機械','設備','kva','PDS','NUL'];
+  for (const it of items) {
+    if (fullText.includes(it)) {
+      // その行全体を品名にする
+      const itemLine = lines.find(l => l.includes(it));
+      parsedJob.item = itemLine || it;
+      break;
+    }
+  }
+
+  // 号車をチェック
+  for (const t of trucks) {
+    if (fullText.includes(t.num)) {
+      parsedJob.truck = t.num;
+      break;
+    }
+  }
+
+  showParsedResult();
+}
+
+function showParsedResult() {
+  const container = document.getElementById('parseResult');
+  const fields = document.getElementById('parsedFields');
+  container.classList.add('show');
+
+  fields.innerHTML = `
+    <div class="field-row">
+      <label>得意先</label>
+      <input type="text" id="pClient" value="${esc(parsedJob.client)}" list="clientList">
+    </div>
+    <div class="field-row">
+      <label>重量</label>
+      <input type="text" id="pWeight" value="${esc(parsedJob.weight)}" placeholder="例: 20t">
+    </div>
+    <div class="field-row">
+      <label>発地</label>
+      <input type="text" id="pFrom" value="${esc(parsedJob.from)}">
+    </div>
+    <div class="field-row">
+      <label>着地</label>
+      <input type="text" id="pTo" value="${esc(parsedJob.to)}">
+    </div>
+    <div class="field-row">
+      <label>品名</label>
+      <input type="text" id="pItem" value="${esc(parsedJob.item)}">
+    </div>
+    <div class="field-row">
+      <label>備考</label>
+      <input type="text" id="pNote" value="${esc(parsedJob.note)}">
+    </div>
+    <div class="field-row">
+      <label>時間</label>
+      <input type="text" id="pTime" value="${esc(parsedJob.time)}" placeholder="例: 7時着">
+    </div>
+    <div class="field-row">
+      <label>号車</label>
+      <select id="pTruck">
+        <option value="">-- 選択 --</option>
+        ${trucks.map(t => `<option value="${esc(t.num)}" ${parsedJob.truck === t.num ? 'selected' : ''}>${esc(t.num)} (${esc(t.type)})</option>`).join('')}
+      </select>
+    </div>
+    <datalist id="clientList">
+      ${clients.map(c => `<option value="${esc(c)}">`).join('')}
+    </datalist>
+  `;
+}
+
+function clearParse() {
+  document.getElementById('parseInput').value = '';
+  document.getElementById('parseResult').classList.remove('show');
+  parsedJob = null;
+}
+
+// ── スプレッドシートに登録 ──
+async function confirmJob() {
+  const job = {
+    client: document.getElementById('pClient').value,
+    weight: document.getElementById('pWeight').value,
+    from: document.getElementById('pFrom').value,
+    to: document.getElementById('pTo').value,
+    item: document.getElementById('pItem').value,
+    note: document.getElementById('pNote').value,
+    time: document.getElementById('pTime').value,
+    truck: document.getElementById('pTruck').value,
+    driver: '',
+    confirmed: true,
+    roundTrip: false
+  };
+
+  // ローカルに追加
+  todayJobs.push(job);
+  saveLocal('haisha_today', todayJobs);
+
+  // GASに送信
+  if (settings.gasUrl) {
+    try {
+      const d = currentDate;
+      const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+      const resp = await fetch(settings.gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          date: dateStr,
+          '管理番号': '',
+          '得意先': job.client || '',
+          '重量': job.weight || '',
+          '発地': job.from || '',
+          '着地': job.to || '',
+          '品名': job.item || '',
+          '備考': job.note || '',
+          'K': '',
+          'その他': job.time || '',
+          '金額': '',
+          '有料代': '',
+          '車番': job.truck || '',
+          '運転手': job.driver || ''
+        })
+      });
+      const result = await resp.json();
+      if (result.success) {
+        showToast('スプレッドシートに登録しました');
+      } else {
+        showToast('登録エラー: ' + (result.error || ''));
+      }
+    } catch (e) {
+      showToast('ローカルに保存しました（シート連携エラー）');
+    }
+  } else {
+    showToast('ローカルに保存しました');
+  }
+
+  clearParse();
+  renderToday();
+  renderTrucks();
+  switchTab('today');
+}
+
+// ── 号車一覧 ──
+function renderTrucks() {
+  // 号車ごとの稼働状況を計算
+  const truckJobs = {};
+  todayJobs.forEach(job => {
+    if (job.truck) {
+      if (!truckJobs[job.truck]) truckJobs[job.truck] = [];
+      truckJobs[job.truck].push(job);
+    }
+  });
+
+  const busyCount = Object.keys(truckJobs).length;
+  const freeCount = trucks.length - busyCount;
+
+  document.getElementById('truckStats').innerHTML = `
+    <div class="stat-box green"><div class="num">${freeCount}</div><div class="label">空き</div></div>
+    <div class="stat-box blue"><div class="num">${busyCount}</div><div class="label">稼働中</div></div>
+    <div class="stat-box blue"><div class="num">${trucks.length}</div><div class="label">全車両</div></div>
+  `;
+
+  const grid = document.getElementById('truckGrid');
+  grid.innerHTML = trucks.map(t => {
+    const jobs = truckJobs[t.num] || [];
+    const isBusy = jobs.length > 0;
+    const driver = jobs[0]?.driver || '';
+    const dest = jobs.map(j => j.to).join(', ');
+
+    return `
+      <div class="truck-card">
+        <div class="truck-num">${esc(t.num)}</div>
+        <div class="truck-type">${esc(t.type)}</div>
+        <span class="truck-status ${isBusy ? 'busy' : 'free'}">
+          ${isBusy ? '稼働中' : '空き'}
+        </span>
+        ${driver ? `<div class="truck-driver">${esc(driver)}</div>` : ''}
+        ${dest ? `<div class="truck-dest">${esc(dest)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── 案件編集 ──
+function editJob(idx) {
+  const job = todayJobs[idx];
+  // 簡易的にアラートで削除確認
+  if (confirm(`${job.client}\n${job.from} → ${job.to}\n\nこの案件を削除しますか？`)) {
+    todayJobs.splice(idx, 1);
+    saveLocal('haisha_today', todayJobs);
+    renderToday();
+    renderTrucks();
+    showToast('案件を削除しました');
+  }
+}
+
+// ── マスタ管理 ──
+function renderMasters() {
+  // 号車マスタ
+  document.getElementById('truckMasterList').innerHTML = trucks.map((t, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0">
+      <span style="font-weight:600">${esc(t.num)} <span style="color:#999;font-weight:400">${esc(t.type)}</span></span>
+      <button onclick="deleteTruck(${i})" style="background:none;border:none;color:var(--danger);font-size:18px;padding:4px 8px">✕</button>
+    </div>
+  `).join('');
+
+  // 得意先マスタ
+  document.getElementById('clientMasterList').innerHTML = clients.map((c, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0">
+      <span style="font-weight:600">${esc(c)}</span>
+      <button onclick="deleteClient(${i})" style="background:none;border:none;color:var(--danger);font-size:18px;padding:4px 8px">✕</button>
+    </div>
+  `).join('');
+}
+
+function openTruckModal() {
+  document.getElementById('truckModal').classList.add('show');
+  document.getElementById('truckNumInput').value = '';
+  document.getElementById('truckTypeInput').value = '';
+}
+function closeTruckModal() {
+  document.getElementById('truckModal').classList.remove('show');
+}
+function addTruck() {
+  const num = document.getElementById('truckNumInput').value.trim();
+  const type = document.getElementById('truckTypeInput').value.trim();
+  if (!num) { showToast('号車を入力してください'); return; }
+  trucks.push({ num, type });
+  saveLocal('haisha_trucks', trucks);
+  closeTruckModal();
+  renderMasters();
+  renderTrucks();
+  showToast('号車を追加しました');
+}
+function deleteTruck(idx) {
+  if (confirm(`${trucks[idx].num} を削除しますか？`)) {
+    trucks.splice(idx, 1);
+    saveLocal('haisha_trucks', trucks);
+    renderMasters();
+    renderTrucks();
+  }
+}
+
+function openClientModal() {
+  document.getElementById('clientModal').classList.add('show');
+  document.getElementById('clientNameInput').value = '';
+}
+function closeClientModal() {
+  document.getElementById('clientModal').classList.remove('show');
+}
+function addClient() {
+  const name = document.getElementById('clientNameInput').value.trim();
+  if (!name) { showToast('得意先名を入力してください'); return; }
+  clients.push(name);
+  saveLocal('haisha_clients', clients);
+  closeClientModal();
+  renderMasters();
+  showToast('得意先を追加しました');
+}
+function deleteClient(idx) {
+  if (confirm(`${clients[idx]} を削除しますか？`)) {
+    clients.splice(idx, 1);
+    saveLocal('haisha_clients', clients);
+    renderMasters();
+  }
+}
+
+// ── 設定 ──
+function saveSettings() {
+  settings.sheetId = document.getElementById('settingSheetId').value.trim();
+  settings.gasUrl = document.getElementById('settingGasUrl').value.trim();
+  settings.sheetName = document.getElementById('settingSheetName').value.trim();
+  saveLocal('haisha_settings', settings);
+  showToast('設定を保存しました');
+}
+
+async function testConnection() {
+  settings.gasUrl = document.getElementById('settingGasUrl').value.trim();
+  if (!settings.gasUrl) {
+    showToast('GAS URLを入力してください');
+    return;
+  }
+  try {
+    const resp = await fetch(settings.gasUrl);
+    const result = await resp.json();
+    if (result.success) {
+      showToast(`接続成功！ ${result.jobs ? result.jobs.length + '件のデータ' : ''}`);
+    } else {
+      showToast('接続失敗: ' + (result.error || ''));
+    }
+  } catch(e) {
+    showToast('接続失敗: ' + e.message);
+  }
+}
+
+// ── モーダル外タップで閉じる ──
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.classList.remove('show');
+    }
+  });
+});
+
+// ── 起動 ──
+init();
+
+// Service Worker登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
